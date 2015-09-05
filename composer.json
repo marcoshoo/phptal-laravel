@@ -1,0 +1,31 @@
+{
+    "name": "marcoshoo/phptal-laravel",
+    "description": "PHPTAL for Laravel 5.1",
+    "homepage": "http://github.com/marcoshoo/phptal-laravel",
+    "keywords": ["laravel", "phptal"],
+    "license": "MIT",
+    "authors": [        
+        {
+            "name": "Marcos Soares",
+            "email": "marcos.hoo@gmail.com",
+            "role": "Developer"
+        },
+        {
+            "name": "Levi Stanley",
+            "email": "levi@eneservices.com",
+            "homepage": "http://www.eneservices.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.5.9",
+        "laravel/framework": "5.1.*",
+        "phptal/phptal": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "MarcosHoo\\LaravelPHPTAL\\": "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}
