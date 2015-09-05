@@ -22,6 +22,12 @@ Once Composer has installed or updated your packages you need to register PHPTAL
 MarcosHoo\LaravelPHPTAL\PHPTALServiceProvider::class,
 ```
 
+Next step is copy example config to your `config` directory.
+
+```php
+php ./artisan vendor:publish --provider 'MarcosHoo\LaravelPHPTAL\PHPTALServiceProvider'
+```
+
 Configuration
 =============
 
