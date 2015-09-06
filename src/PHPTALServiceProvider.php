@@ -34,18 +34,18 @@ class PHPTALServiceProvider extends ServiceProvider
         ]);
 
         // Set extensions
-        $extensions = $app['config']['phptal.extensions'];;
-        foreach ((!is_array($extensions) ? [ explode(',', $extensions) ] : $extensions) as $extension) {
+        $extensions = $app['config']['phptal.extensions'];
+        $extensions = (!is_array($extensions) ? [ explode(',', $extensions) ] : $extensions);
+        foreach ($extensions as $extension) {
             $factory->addExtension(trim($extension), 'tal');
         }
         
         // Set template paths
-        $templateRepositories = trim($app['config']['phptal.templateRepositories']);
+        $templateRepositories = $app['config']['phptal.templateRepositories'];
+        $templateRepositories = !is_array($templateRepositories) ? explode(',', $templateRepositories) : $templateRepositories;
         $paths = $app['config']['view.paths'];
-        $repositories = [];
         if ($templateRepositories) {
-            foreach (is_array($templateRepositories) ? $templateRepositories : explode(',', $templateRepositories) as $repo) {
-                $repositories[] = $repo;
+            foreach ($templateRepositories as $repo) {
                 if (!in_array($repo, $paths)) {
                     $app['config']['view.paths'] = array_merge($app['config']['view.paths'], array(
                         $repo
@@ -53,8 +53,7 @@ class PHPTALServiceProvider extends ServiceProvider
                 }
             }
         }
-        $app['config']['phptal.templateRepositories'] = $repositories;
-
+        
         $this->app->extend('view.engine.resolver', function () use($factory) {
             $resolver = $factory->getEngineResolver();
             $this->registerPHPTALEngine($resolver);
