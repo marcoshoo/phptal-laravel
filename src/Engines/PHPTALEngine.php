@@ -138,6 +138,19 @@ class PHPTALEngine implements EngineInterface
     {
         if (!empty($data)) {
             foreach ($data as $field => $value) {
+                // Creating error properties in ViewErrorBag
+                if ($field == 'errors') {
+                    foreach ($value->getBags() as $bkey => $bag) {                        
+                        $keys = $bag->keys();
+                        foreach ($bag->keys() as $key) {
+                            if ($bkey != 'default') {
+                                $value->$bkey = [ $key => $bag->get($key) ];
+                            } else {
+                                $value->$key = $bag->get($key);
+                            }
+                        }
+                    }
+                }
                 if (!preg_match('/^_|\s/', $field)) {
                     $this->phptal->set($field, $value);
                 }
