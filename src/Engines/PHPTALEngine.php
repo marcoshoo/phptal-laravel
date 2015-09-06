@@ -53,7 +53,7 @@ class PHPTALEngine implements EngineInterface
         $postFilters = $this->config->get('phptal.postFilters', array());
         $encoding = $this->config->get('phptal.encoding', 'UTF-8');
         $outputMode = $this->config->get('phptal.outputMode', \PHPTAL::HTML5);
-        $phpCodeDestination = $this->config->get('phptal.phpCodeDestination', $app['path.storage'] . '/phptal');
+        $phpCodeDestination = $this->config->get('phptal.phpCodeDestination', $app['path.storage'] . '/framework/views');
         $forceReparse = $this->config->get('phptal.forceParse', true);
         $templateRepositories = $this->config->get('phptal.templateRepositories', $app['path.base'] . '/resources/views' . (TEMPLATE_ID ? '/' . TEMPLATE_ID : ''));
         $translationClass = $this->config->get('phptal.translationClass');
@@ -61,7 +61,7 @@ class PHPTALEngine implements EngineInterface
             'en'
         ]);
         $translationFilename = $this->config->get('phptal.translationFilename', 'translations');
-        $translationPath = $this->config->get('phptal.translationPath', app_path() . '/lang/');
+        $translationPath = $this->config->get('phptal.translationPath', $app['path.base'] . '/lang/');
 
         // Create code destination directory
         $disk = $app['files'];
