@@ -43,13 +43,13 @@ class PHPTALTranslator implements \PHPTAL_TranslationService
      */
     function useDomain($domain)
     {
-        $found = false;
         if (!array_key_exists($domain, $this->domains)) {
             $files = [
                 base_path() . "/resources/lang/{$this->language}/{$domain}.php",
                 base_path() . "/resources/lang/{$this->language}/domains/{$domain}.php",
                 base_path() . "/lang/{$this->language}/domains/{$domain}.php"
             ];
+            $found = false;
             foreach ($files as $file) {
                 if (is_readable($file)) {
                     $found = true;
@@ -57,9 +57,11 @@ class PHPTALTranslator implements \PHPTAL_TranslationService
                 }
             }
             if ($found) {
-                $this->domains[$domain] = include ($file);
+                $this->domains[$domain] = include($file);
                 $this->context = $this->domains[$domain];
             }
+        } else {
+            $this->context = $this->domains[$domain];
         }
     }
 
