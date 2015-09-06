@@ -1,3 +1,11 @@
 /vendor
 composer.phar
 composer.lock
+
+# Eclipse
+.gitignore.orig
+.gitignore.new
+.gitignore
+.settings
+.buildpath
+.project
