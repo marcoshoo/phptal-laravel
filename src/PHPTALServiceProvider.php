@@ -15,6 +15,7 @@ class PHPTALServiceProvider extends ServiceProvider
     public function register()
     {
         $app = $this->app;
+        $factory = $app->make('view');
 
         // This is only for the template system.
         $templateIdString = '';
@@ -33,10 +34,13 @@ class PHPTALServiceProvider extends ServiceProvider
         ]);
 
         // Set extensions
-        $extensions = trim($app['config']['phptal.extensions']);
-        $templateRepositories = trim($app['config']['phptal.templateRepositories']);
-
+        $extensions = $app['config']['phptal.extensions'];;
+        foreach ((!is_array($extensions) ? [ explode(',', $extensions) ] : $extensions) as $extension) {
+            $factory->addExtension(trim($extension), 'tal');
+        }
+        
         // Set template paths
+        $templateRepositories = trim($app['config']['phptal.templateRepositories']);
         $paths = $app['config']['view.paths'];
         $repositories = [];
         if ($templateRepositories) {
@@ -50,12 +54,6 @@ class PHPTALServiceProvider extends ServiceProvider
             }
         }
         $app['config']['phptal.templateRepositories'] = $repositories;
-
-        $factory = $app->make('view');
-
-        foreach (is_array($extensions) ? $extensions : explode(',', $extensions) as $extension) {
-            $factory->addExtension(trim($extension), 'tal');
-        }
 
         $this->app->extend('view.engine.resolver', function () use($factory) {
             $resolver = $factory->getEngineResolver();
