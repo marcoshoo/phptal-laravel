@@ -63,6 +63,7 @@ class PHPTALTranslator implements \PHPTAL_TranslationService
         } else {
             $this->context = $this->domains[$domain];
         }
+        return $domain;
     }
 
     /**
