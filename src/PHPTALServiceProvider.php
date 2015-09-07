@@ -39,7 +39,7 @@ class PHPTALServiceProvider extends ServiceProvider
         foreach ($extensions as $extension) {
             $factory->addExtension(trim($extension), 'tal');
         }
-        
+
         // Set template paths
         $templateRepositories = $app['config']['phptal.templateRepositories'];
         $templateRepositories = !is_array($templateRepositories) ? explode(',', $templateRepositories) : $templateRepositories;
@@ -47,13 +47,13 @@ class PHPTALServiceProvider extends ServiceProvider
         if ($templateRepositories) {
             foreach ($templateRepositories as $repo) {
                 if (!in_array($repo, $paths)) {
-                    $app['config']['view.paths'] = array_merge($app['config']['view.paths'], array(
+                    $app['config']['view.paths'] = array_merge($app['config']['view.paths'], [
                         $repo
-                    ));
+                    ]);
                 }
             }
         }
-        
+
         $this->app->extend('view.engine.resolver', function () use($factory) {
             $resolver = $factory->getEngineResolver();
             $this->registerPHPTALEngine($resolver);

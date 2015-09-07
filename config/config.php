@@ -78,10 +78,6 @@ return [
     */
 
     'translationClass' => \MarcosHoo\LaravelPHPTAL\PHPTALTranslator::class,
-    'translationPath' => base_path('resources/lang/'),
-    'translationFilename' => 'messages',
-    'translationLanguages' => [
-        app('config')->get('app.locale'),
-    ]
+    'translationDomain' => 'messages',
 
 ];

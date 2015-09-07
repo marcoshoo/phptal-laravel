@@ -2,15 +2,24 @@
 
 namespace MarcosHoo\LaravelPHPTAL;
 
-// github enhancement request #1 by towel (https://github.com/towel)
-// This an example of implementing your own Translation Service
+use MarcosHoo\LaravelPHPTAL\Engines\PHPTALEngine;
+
 class PHPTALTranslator implements \PHPTAL_TranslationService
 {
     protected $language = 'en';
     protected $encoding = 'UTF-8';
-    protected $path = '';
-    protected $domains = array();
-    protected $context = array();
+    protected $domain = 'messages';
+    protected $context = [];
+    protected $engine = null;
+
+    /**
+     *
+     * @param PHPTALEngine $engine
+     */
+    public function __construct(PHPTALEngine $engine = null)
+    {
+        $this->engine = $engine;
+    }
 
     /**
      * Set the target language for translations.
@@ -43,25 +52,8 @@ class PHPTALTranslator implements \PHPTAL_TranslationService
      */
     function useDomain($domain)
     {
-        if (!array_key_exists($domain, $this->domains)) {
-            $files = [
-                base_path() . "/resources/lang/{$this->language}/{$domain}.php",
-                base_path() . "/resources/lang/{$this->language}/domains/{$domain}.php",
-                base_path() . "/lang/{$this->language}/domains/{$domain}.php"
-            ];
-            $found = false;
-            foreach ($files as $file) {
-                if (is_readable($file)) {
-                    $found = true;
-                    break;
-                }
-            }
-            if ($found) {
-                $this->domains[$domain] = include($file);
-                $this->context = $this->domains[$domain];
-            }
-        } else {
-            $this->context = $this->domains[$domain];
+        if ($domain != $this->domain) {
+            $this->domain = $domain;
         }
         return $domain;
     }
@@ -83,41 +75,107 @@ class PHPTALTranslator implements \PHPTAL_TranslationService
 
     /**
      *
-     * @param
-     *            $domain
+     * @param $domain
      * @param string $path
      */
     function addDomain($domain, $path = './locale')
     {
-        bindtextdomain($domain, $path);
-        if ($this->encoding) {
-            bind_textdomain_codeset($domain, $this->encoding);
-        }
         $this->useDomain($domain);
     }
     /**
-     * Translate a gettext key and interpolate variables.
+     * Translate a message key and interpolate variables.
      *
      * @param string $key
-     *            - translation key, e.g. "hello ${username}!"
+     *            - translation key, e.g. "hello ${username}!" or "hello :username!"
      * @param string $htmlescape
      *            - if true, you should HTML-escape translated string. You should never HTML-escape interpolated variables.
      */
-    function translate($key, $htmlescape = true)
+    function translate($message, $htmlescape = true)
     {
-        $value = $this->context[$key];
+        $info = explode('|', $message);
+        $number = count($info) > 1 ? ($info[1] != 'null' && $info[1] != '' ? floatval($info[1]) : null) : null;
+        $params = count($info) > 2 ? array_slice($info, 2) : [];
+        $info = explode('.', head($info));
+        $key = count($info) > 1 ? $info[1] : $info[0];
+        $domain = count($info) > 1 ? $info[0] : $this->domain;
+        $fullkey = $domain . '.' . $key;
+        $contextkey = $this->language . '.' . $domain . '.' . $key;
+
+        // Get parameters in call
+        $parameters = [];
+        foreach ($params as $key) {
+            $info = explode('=', $key);
+            $pkey = trim(head($info));
+            $pvalue = count($info) ? implode('=', array_slice($info, 1)) : null;
+            $pvalue = htmlspecialchars($pvalue, ENT_COMPAT | ENT_HTML401, $this->encoding) ?  : '';
+            $parameters = array_merge($parameters, eval('return [\'' . $pkey . '\'=>\'' . $pvalue . '\'];'));
+        }
+
+        // Search context
+        if (!array_key_exists($contextkey, $this->context)) {
+            // Not found
+            // Get Laravel translation
+            $value =
+                ($number !== null)
+                    ? trans_choice($fullkey, $number, $parameters, $domain, $this->language)
+                    : trans($fullkey, $parameters, $domain, $this->language);
+            if ($value != $fullkey) {
+                $this->context[$contextkey] = $value;
+            }
+        } else {
+            // Found
+            $value = $this->context[$contextkey];
+        }
 
         if ($htmlescape) {
             $value = htmlspecialchars($value, ENT_COMPAT | ENT_HTML401, $this->encoding);
         }
 
-        while (preg_match('/\${(.*?)\}/sm', $value, $matches)) {
-            list($source,$field) = $matches;
-            if (!array_keys_exists($field, $this->context)) {
-                throw new \Exception(sprintf('Interpolation error, variable "%s" not set', $field));
+        // Interpolation
+        while (preg_match('/\${(.*?)\}|:([A-Za-z](\w+)?)/sm', $value, $matches)) {
+            if (count($matches) == 2) {
+                list($source,$key) = $matches;
+            } else {
+                list($source,$dummy,$key) = $matches;
             }
-            $value = str_replace($source, $this->context[$var], $value);
+            $fullkey = $this->language . '.' . $domain . '.' . $key;
+            $found = false;
+            if (array_key_exists($key, $parameters)) { // Search in parameters
+                $value = str_replace($source, $parameters[$key], $value);
+                $found = true;
+            } elseif (array_key_exists($key, $this->context)) { // Search i18n:name in context
+                $value = str_replace($source, $this->context[$key], $value);
+                $found = true;
+            } elseif (array_key_exists($fullkey, $this->context)) { // Search in context
+                $value = str_replace($source, $this->context[$fullkey], $value);
+                $found = true;
+            }
+            if (!$found) {
+                try {
+                    // Try to get a translation
+                    $trans = $this->translate($key, $htmlescape);
+                    $this->useDomain($domain);
+                    if ($trans == $key) {
+                        throw new \Exception(sprintf('Interpolation error, variable "%s" not set', $key));
+                    }
+                    $value = str_replace($source, $trans, $value);
+                    $found = true;
+                } catch (Exception $e) {
+                    if ($this->engine) { // Search in PHPTAL context
+                        if (isset($this->engine->getPHPTAL()->getContext()->$key)) { // Local context
+                            $key = $this->engine->getPHPTAL()->getContext()->$key;
+                            $value = str_replace($source, $key, $value);
+                        } elseif (isset($this->engine->getPHPTAL()->getGlobalContext()->$key)) { // Global context
+                            $key = $this->engine->getPHPTAL()->getGlobalContext()->$key;
+                            $value = str_replace($source, $key, $value);
+                        } else {
+                            throw new \Exception(sprintf('Interpolation error, variable "%s" not set', $matches[0]));
+                        }
+                    }
+                }
+            }
         }
+
         return $value;
     }
 }

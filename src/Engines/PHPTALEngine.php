@@ -6,7 +6,6 @@ use Illuminate\View\Engines\EngineInterface;
 use MarcosHoo\LaravelPHPTAL\PHPTALFilterChain;
 use MarcosHoo\LaravelPHPTAL\Translator;
 use Illuminate\Foundation\Application;
-use Illuminate\Filesystem\Filesystem;
 
 class PHPTALEngine implements EngineInterface
 {
@@ -32,7 +31,7 @@ class PHPTALEngine implements EngineInterface
      *
      * @var array
      */
-    protected $translationSettings = array();
+    protected $translationSettings = [];
 
     /**
      * Prep the PHPTAL object
@@ -49,33 +48,24 @@ class PHPTALEngine implements EngineInterface
 
         // Override the defaults with information from config file
 
-        $preFilters = $this->config->get('phptal.preFilters', array());
-        $postFilters = $this->config->get('phptal.postFilters', array());
-        $encoding = $this->config->get('phptal.encoding', 'UTF-8');
+        $preFilters = $this->config->get('phptal.preFilters', []);
+        $postFilters = $this->config->get('phptal.postFilters', []);
+        $encoding = $this->config->get('phptal.translationEncoding', 'UTF-8');
         $outputMode = $this->config->get('phptal.outputMode', \PHPTAL::HTML5);
         $phpCodeDestination = $this->config->get('phptal.phpCodeDestination', $app['path.storage'] . '/framework/views');
         $forceReparse = $this->config->get('phptal.forceParse', true);
         $templateRepositories = $this->config->get('phptal.templateRepositories', $app['path.base'] . '/resources/views' . (TEMPLATE_ID ? '/' . TEMPLATE_ID : ''));
         $translationClass = $this->config->get('phptal.translationClass');
-        $translationLanguages = $this->config->get('phptal.translationLanguages', [
-            'en'
-        ]);
-        $translationFilename = $this->config->get('phptal.translationFilename', 'translations');
-        $translationPath = $this->config->get('phptal.translationPath', $app['path.base'] . '/lang/');
-
-        // Create code destination directory
-        $disk = $app['files'];
-        if (!$disk->isDirectory($phpCodeDestination)) {
-            $disk->makeDirectory($phpCodeDestination, 0755, true, true);
-        }
+        $translationDomain = $this->config->get('phptal.translationDomain', 'messages');
+        $translationLanguage = [
+            $this->app->getLocale()
+        ];
 
         // Setting up translation settings
-        $this->translationSettings['encoding'] = $encoding;
-        $this->translationSettings['path'] = $translationPath;
-        $this->translationSettings['languages'] = $translationLanguages;
 
+        $this->translationSettings['encoding'] = $encoding;
         if (!empty($translationClass)) {
-            $this->setTranslator($translationLanguages, $translationFilename, $translationClass);
+            $this->setTranslator($translationLanguage, $translationDomain, $translationClass);
         }
         // Setting up all the filters
 
@@ -106,24 +96,31 @@ class PHPTALEngine implements EngineInterface
      * @param string $domain
      * @param string $translatorClass
      */
-    public function setTranslator($languages = null, $domain = '', $translatorClass = '\PHPTAL_GetTextTranslator')
+    public function setTranslator($languages = [ 'en' ], $domain = 'messages', $translatorClass = '\PHPTAL_GetTextTranslator')
     {
-        if ($languages === null) {
-            $languages = array(
-                $this->config->get('app.locale')
-            );
-        }
+        $translator = new $translatorClass($this);
+        $languages = !is_array($languages) ? [
+            $languages
+        ] : $languages;
 
-        $translator = new $translatorClass();
-
-        call_user_func_array(array(
+        call_user_func_array([
             $translator,
             'setLanguage'
-        ), $languages);
+        ], $languages);
         $translator->setEncoding($this->translationSettings['encoding']);
-        $translator->addDomain($domain, $this->translationSettings['path']);
+        $translator->addDomain($domain);
 
         $this->phptal->setTranslator($translator);
+    }
+
+    /**
+     * Return PHPTAL object.
+     *
+     * @return \PHPTAL
+     */
+    public function getPHPTAL()
+    {
+        return $this->phptal;
     }
 
     /**
@@ -134,17 +131,19 @@ class PHPTALEngine implements EngineInterface
      *
      * @return string
      */
-    public function get($path, array $data = array())
+    public function get($path, array $data = [])
     {
         if (!empty($data)) {
             foreach ($data as $field => $value) {
                 // Creating error properties in ViewErrorBag
                 if ($field == 'errors') {
-                    foreach ($value->getBags() as $bkey => $bag) {                        
+                    foreach ($value->getBags() as $bkey => $bag) {
                         $keys = $bag->keys();
                         foreach ($bag->keys() as $key) {
                             if ($bkey != 'default') {
-                                $value->$bkey = [ $key => $bag->get($key) ];
+                                $value->$bkey = [
+                                    $key => $bag->get($key)
+                                ];
                             } else {
                                 $value->$key = $bag->get($key);
                             }

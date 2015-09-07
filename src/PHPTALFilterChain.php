@@ -10,7 +10,7 @@ class PHPTALFilterChain implements PHPTAL_Filter
      *
      * @var array
      */
-    protected $filters = array();
+    protected $filters = [];
 
     /**
      *
