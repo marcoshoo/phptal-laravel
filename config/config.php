@@ -41,11 +41,7 @@ return [
     */
 
     'phpCodeDestination' => (
-
-         app('config')->get('view.compiled')
-             ? app('config')->get('view.compiled')
-             : realpath(storage_path('framework/views'))
-
+         config('view.compiled') ?: realpath(storage_path('framework/views'))
     ),
 
     /*
@@ -66,9 +62,7 @@ return [
          function ($dir) {
              return $dir.(defined('TEMPLATE_ID') ? '/' . TEMPLATE_ID : '');
          },
-         app('config')->get('view.paths')
-             ? app('config')->get('view.paths')
-             : base_path('/resources/views')
+         config('view.paths') ?: [ base_path('/resources/views') ]
     ),
 
     /*
