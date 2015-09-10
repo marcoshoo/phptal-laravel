@@ -52,7 +52,7 @@ class PHPTALTranslator implements \PHPTAL_TranslationService
      */
     function useDomain($domain)
     {
-        if ($domain != $this->domain) {
+        if ($domain && $domain != $this->domain) {
             $this->domain = $domain;
         }
         return $domain;
@@ -75,7 +75,8 @@ class PHPTALTranslator implements \PHPTAL_TranslationService
 
     /**
      *
-     * @param $domain
+     * @param
+     *            $domain
      * @param string $path
      */
     function addDomain($domain, $path = './locale')
@@ -115,10 +116,7 @@ class PHPTALTranslator implements \PHPTAL_TranslationService
         if (!array_key_exists($contextkey, $this->context)) {
             // Not found
             // Get Laravel translation
-            $value =
-                ($number !== null)
-                    ? trans_choice($fullkey, $number, $parameters, $domain, $this->language)
-                    : trans($fullkey, $parameters, $domain, $this->language);
+            $value = ($number !== null) ? trans_choice($fullkey, $number, $parameters, $domain, $this->language) : trans($fullkey, $parameters, $domain, $this->language);
             if ($value != $fullkey) {
                 $this->context[$contextkey] = $value;
             }
