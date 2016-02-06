@@ -1,6 +1,6 @@
 {
     "name": "marcoshoo/phptal-laravel",
-    "description": "PHPTAL for Laravel 5.1",
+    "description": "PHPTAL for Laravel 5.x",
     "homepage": "http://github.com/marcoshoo/phptal-laravel",
     "keywords": ["laravel", "phptal"],
     "license": "MIT",
@@ -19,7 +19,7 @@
     ],
     "require": {
         "php": ">=5.5.9",
-        "laravel/framework": "5.1.*",
+        "laravel/framework": "5.*",
         "phptal/phptal": "dev-master"
     },
     "autoload": {
