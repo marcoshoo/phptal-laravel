@@ -141,11 +141,9 @@ class PHPTALEngine implements EngineInterface
                         $keys = $bag->keys();
                         foreach ($bag->keys() as $key) {
                             if ($bkey != 'default') {
-                                $value->$bkey = [
-                                    $key => $bag->get($key)
-                                ];
+                                $this->phptal->set($key, [ $bag->get($key) ]);
                             } else {
-                                $value->$key = $bag->get($key);
+                                $this->phptal->set($key, $bag->get($key));
                             }
                         }
                     }
@@ -157,5 +155,21 @@ class PHPTALEngine implements EngineInterface
         }
         $this->phptal->setTemplate($path);
         return $this->phptal->execute();
+    }
+}
+
+if (! function_exists('dc')) {
+    /**
+     * Dump the passed variables and end the script.
+     *
+     * @param  mixed
+     * @return void
+     */
+    function dc()
+    {
+        array_map(function ($x) {
+            (new \Illuminate\Support\Debug\Dumper)->dump($x);
+        }, func_get_args());
+
     }
 }
