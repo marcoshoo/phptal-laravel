@@ -6,6 +6,7 @@ use Illuminate\View\Engines\EngineInterface;
 use MarcosHoo\LaravelPHPTAL\PHPTALFilterChain;
 use MarcosHoo\LaravelPHPTAL\Translator;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\MessageBag;
 
 class PHPTALEngine implements EngineInterface
 {
@@ -137,17 +138,11 @@ class PHPTALEngine implements EngineInterface
             foreach ($data as $field => $value) {
                 // Creating error properties in ViewErrorBag
                 if ($field == 'errors') {
-                    foreach ($value->getBags() as $bkey => $bag) {
-                        $keys = $bag->keys();
-                        foreach ($bag->keys() as $key) {
-                            if ($bkey != 'default') {
-                                $key = $key . '_errors';
-                                $this->phptal->$key = $bag;
-                            } else {
-                                $this->phptal->errors = $bag;
-                            }
-                        }
+                    $bags = $value->getBags();
+                    if (!in_array('default', array_keys($bags))) {
+                        $value->default = new MessageBag([]);
                     }
+                    $this->phptal->errors = $value;
                 }
                 if (!preg_match('/^_|\s/', $field)) {
                     $this->phptal->$field = $value;
