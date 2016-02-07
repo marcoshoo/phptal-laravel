@@ -141,15 +141,16 @@ class PHPTALEngine implements EngineInterface
                         $keys = $bag->keys();
                         foreach ($bag->keys() as $key) {
                             if ($bkey != 'default') {
-                                $this->phptal->set($key, [ $bag->get($key) ]);
+                                $key = $key . '_errors';
+                                $this->phptal->$key = $bag;
                             } else {
-                                $this->phptal->set($key, $bag->get($key));
+                                $this->phptal->errors = $bag;
                             }
                         }
                     }
                 }
                 if (!preg_match('/^_|\s/', $field)) {
-                    $this->phptal->set($field, $value);
+                    $this->phptal->$field = $value;
                 }
             }
         }
